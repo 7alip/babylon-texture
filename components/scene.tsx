@@ -1,11 +1,13 @@
 import React, {
-  ChangeEvent,
   useCallback,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { Engine, Scene as ReactScene } from "react-babylonjs";
+import {
+  Engine,
+  Scene as ReactScene,
+} from "react-babylonjs";
 import { HuePicker } from "react-color";
 
 import {
@@ -25,12 +27,9 @@ import {
   Mesh,
   Scene,
   Texture,
-  Vector3,
 } from "@babylonjs/core";
 
 import { RenderModel } from "./render";
-
-type ModelFolders = "bt";
 
 const textures = [
   "seat__1.jpg",
@@ -44,7 +43,7 @@ const textures = [
 
 const modelFolder = "bt";
 
-const App = () => {
+const ModelScene = () => {
   const [groupName, setGroupName] = useState<string>();
   const [clickedMesh, setClickedMesh] = useState<AbstractMesh>();
   const [scene, setScene] = useState<Scene>();
@@ -54,16 +53,21 @@ const App = () => {
 
   const selectedMeshes = useMemo(() => {
     const sceneMeshes = scene?.meshes.filter((m) => m.metadata);
-    const selected = sceneMeshes && clickedMesh
-      ? isGroupSelect
-        ? sceneMeshes.filter((m) => m.name.includes(`${groupName}`))
-        : sceneMeshes.filter((m) => m.name === clickedMesh.name)
-      : [];
+    const selected =
+      sceneMeshes && clickedMesh
+        ? isGroupSelect
+          ? sceneMeshes.filter((m) => m.name.includes(`${groupName}`))
+          : sceneMeshes.filter((m) => m.name === clickedMesh.name)
+        : [];
 
-      scene?.meshes.forEach(m => highlightLayerEL.current?.removeMesh(m as Mesh))
-      selected.forEach(s => highlightLayerEL.current?.addMesh((s as Mesh), Color3.White()))
+    scene?.meshes.forEach((m) =>
+      highlightLayerEL.current?.removeMesh(m as Mesh)
+    );
+    selected.forEach((s) =>
+      highlightLayerEL.current?.addMesh(s as Mesh, Color3.White())
+    );
 
-      return selected
+    return selected;
   }, [isGroupSelect, scene, groupName, clickedMesh]);
 
   const handleColorChange = useCallback(
@@ -97,103 +101,83 @@ const App = () => {
     setClickedMesh(mesh);
   };
 
-  // console.log('selectedMeshes', selectedMeshes)
-
   return (
-    <>
-      {/* <Box pos="absolute" top={4} right={4}>
-        <Select defaultValue={sceneFilename} onChange={handleChange}>
-          {models.map((model) => (
-            <option key={model.name} value={model.filename}>
-              {model.name}
-            </option>
-          ))}
-        </Select>
-      </Box> */}
-      <Box w="100vw" h="100vh">
-        <Stack
-          pos="fixed"
-          bottom={4}
-          left={4}
-          right={4}
-          justify="center"
-          spacing={8}
-        >
-          <HStack justify="center">
-            <Button
-              colorScheme="blue"
-              onClick={() => handleColorChange("#ffffff")}
-            >
-              Reset Color
-            </Button>
-            <HStack
-              align="center"
-              bg={isGroupSelect ? "blue.500" : "blackAlpha.500"}
-              rounded="lg"
-              p={2}
-              color="white"
-            >
-              <Switch
-                id="select"
-                colorScheme="blue"
-                checked={isGroupSelect}
-                onChange={(e) => setIsGroupSelect(e.target.checked)}
-              />
-              <FormLabel htmlFor="select">Select groups</FormLabel>
-            </HStack>
-          </HStack>
-          {selectedMeshes.length > 0 && (
-            <>
-              <HStack justify="center">
-                <HuePicker
-                  color={color}
-                  onChange={(color) => handleColorChange(color.hex)}
-                />
-              </HStack>
-              <Wrap justify="center">
-                {textures.map((t) => (
-                  <Image
-                    alt="image"
-                    onClick={() =>
-                      onSelectTexture(`/models/${modelFolder}/${t}`)
-                    }
-                    boxSize={16}
-                    rounded="full"
-                    objectFit="cover"
-                    key={t}
-                    src={`/models/${modelFolder}/${t}`}
-                  />
-                ))}
-              </Wrap>
-            </>
-          )}
-        </Stack>
-        <Engine
-          antialias
-          adaptToDeviceRatio
-          engineOptions={{
-            premultipliedAlpha: false,
-            preserveDrawingBuffer: true,
-            antialias: true,
-          }}
-          canvasStyle={{ width: "100%", height: "100%" }}
-        >
-          <ReactScene
-            onDataLoadedObservable={onLoaded}
-            onMeshPicked={onClickMesh}
+    <Box w="100vw" h="100vh">
+      <Stack
+        pos="fixed"
+        bottom={4}
+        left={4}
+        right={4}
+        justify="center"
+        spacing={8}
+      >
+        <HStack justify="center">
+          <Button
+            colorScheme="blue"
+            onClick={() => handleColorChange("#ffffff")}
           >
-            <hemisphericLight
-              name="light"
-              direction={new Vector3(0, 1, 1)}
-              intensity={1}
+            Reset Color
+          </Button>
+          <HStack
+            align="center"
+            bg={isGroupSelect ? "blue.500" : "blackAlpha.500"}
+            rounded="lg"
+            p={2}
+            color="white"
+          >
+            <Switch
+              id="select"
+              colorScheme="blue"
+              checked={isGroupSelect}
+              onChange={(e) => setIsGroupSelect(e.target.checked)}
             />
-            <highlightLayer name="highlight" ref={highlightLayerEL} />
-            <RenderModel rootUrl={`/models/${modelFolder}/`} />
-          </ReactScene>
-        </Engine>
-      </Box>
-    </>
+            <FormLabel htmlFor="select">Select groups</FormLabel>
+          </HStack>
+        </HStack>
+        {selectedMeshes.length > 0 && (
+          <>
+            <HStack justify="center">
+              <HuePicker
+                color={color}
+                onChange={(color) => handleColorChange(color.hex)}
+              />
+            </HStack>
+            <Wrap justify="center">
+              {textures.map((t) => (
+                <Image
+                  alt="image"
+                  onClick={() => onSelectTexture(`/models/${modelFolder}/${t}`)}
+                  boxSize={16}
+                  rounded="full"
+                  objectFit="cover"
+                  key={t}
+                  src={`/models/${modelFolder}/${t}`}
+                />
+              ))}
+            </Wrap>
+          </>
+        )}
+      </Stack>
+      <Engine
+        antialias
+        adaptToDeviceRatio
+        engineOptions={{
+          premultipliedAlpha: false,
+          preserveDrawingBuffer: true,
+          antialias: true,
+        }}
+        canvasStyle={{ width: "100%", height: "100%" }}
+      >
+        <ReactScene
+          onDataLoadedObservable={onLoaded}
+          onMeshPicked={onClickMesh}
+        >
+          <highlightLayer name="highlight" ref={highlightLayerEL} />
+          <RenderModel rootUrl={`/models/${modelFolder}/`} />
+        </ReactScene>
+      </Engine>
+    </Box>
   );
 };
 
-export default App;
+export default ModelScene;

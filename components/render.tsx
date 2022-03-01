@@ -1,5 +1,10 @@
-import React, { useRef, FC } from "react";
-import { ILoadedModel, useScene } from "react-babylonjs";
+import React, { useRef, FC, Suspense } from "react";
+import {
+  ILoadedModel,
+  Model,
+  SceneLoaderContextProvider,
+  useScene,
+} from "react-babylonjs";
 import {
   Vector3,
   Color3,
@@ -7,31 +12,22 @@ import {
   Nullable,
   FramingBehavior,
 } from "@babylonjs/core";
-import { ScaledModelWithProgress } from "./scaled-model-with-progress";
 import "@babylonjs/loaders/glTF";
 import "@babylonjs/inspector";
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 
-
 export type RenderModelProps = {
-  rootUrl: string
+  rootUrl: string;
 };
 
-export const RenderModel: FC<RenderModelProps> = ({
-  rootUrl,
-}) => {
+export const RenderModel: FC<RenderModelProps> = ({ rootUrl }) => {
   const camera = useRef<Nullable<ArcRotateCamera>>(null);
   const scene = useScene();
 
   const onModelLoaded = (e: ILoadedModel) => {
-    if (camera && camera.current) {
-      // if (e.loaderName === "gltf") {
-      //   camera.current.alpha += Math.PI;
-      // }
-
-      // Enable camera's behaviors (done declaratively)
+    if (camera?.current) {
       camera.current.useFramingBehavior = true;
-      var framingBehavior = camera.current.getBehaviorByName(
+      const framingBehavior = camera.current.getBehaviorByName(
         "Framing"
       ) as FramingBehavior;
       framingBehavior.framingTime = 0;
@@ -44,10 +40,6 @@ export const RenderModel: FC<RenderModelProps> = ({
           const includeMesh = (e.meshes as AbstractMesh[]).some(
             (loadedMesh: AbstractMesh) => loadedMesh === sceneMesh
           );
-
-          // if (includeMesh === true) {
-          //   console.log(`including: '${mesh.name}'`)
-          // }
 
           return includeMesh;
         });
@@ -63,45 +55,53 @@ export const RenderModel: FC<RenderModelProps> = ({
   };
 
   return (
-    <>
-      <arcRotateCamera
-        ref={camera}
-        name="arc"
-        target={Vector3.Zero()}
-        position={Vector3.Zero()}
-        alpha={Math.PI}
-        beta={0.5 + Math.PI / 4}
-        minZ={0.001}
-        wheelPrecision={50}
-        useAutoRotationBehavior
-        allowUpsideDown={false}
-        checkCollisions
-        radius={2}
-        lowerRadiusLimit={25}
-        upperRadiusLimit={75}
-        useFramingBehavior={true}
-        wheelDeltaPercentage={0.01}
-        pinchDeltaPercentage={0.01}
-      />
+    <SceneLoaderContextProvider>
+      <Suspense fallback={null}>
+        <arcRotateCamera
+          ref={camera}
+          name="arc"
+          target={Vector3.Zero()}
+          position={Vector3.Zero()}
+          alpha={1}
+          beta={1}
+          minZ={0.0001}
+          wheelPrecision={50}
+          useAutoRotationBehavior
+          allowUpsideDown={false}
+          checkCollisions
+          radius={2}
+          lowerRadiusLimit={25}
+          upperRadiusLimit={75}
+          useFramingBehavior={true}
+          wheelDeltaPercentage={0.3}
+          pinchDeltaPercentage={0.3}
+        />
 
-      <environmentHelper
-        options={{
-          enableGroundShadow: false,
-          createGround: false,
-          skyboxSize: 1000,
-        }}
-        setMainColor={[Color3.FromHexString("#ffffff")]}
-      />
-
-      <ScaledModelWithProgress
-        rootUrl={rootUrl}
-        progressBarColor={Color3.FromInts(135, 206, 235)}
-        center={Vector3.Zero()}
-        modelRotation={Vector3.Zero()}
-        onModelLoaded={(e: ILoadedModel) => {
-          onModelLoaded(e);
-        }}
-      />
-    </>
+        <environmentHelper
+          options={{
+            enableGroundShadow: false,
+            createGround: false,
+            skyboxSize: 1000,
+            skyboxColor: Color3.White(),
+          }}
+          setMainColor={[Color3.White()]}
+        />
+        <hemisphericLight
+          name="light"
+          direction={new Vector3(0, 1, 1)}
+          intensity={1}
+        />
+        <Model
+          name="model"
+          key="model"
+          reportProgress
+          position={Vector3.Zero()}
+          rootUrl={rootUrl}
+          sceneFilename="model.glb"
+          rotation={Vector3.Zero()}
+          onModelLoaded={onModelLoaded}
+        />
+      </Suspense>
+    </SceneLoaderContextProvider>
   );
 };
