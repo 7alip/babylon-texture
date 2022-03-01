@@ -1,35 +1,70 @@
-import React, { ChangeEvent, useCallback, useRef, useState } from "react";
+import React, {
+  ChangeEvent,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Engine, Scene as ReactScene } from "react-babylonjs";
 import { HuePicker } from "react-color";
 
-import { Box, Button, HStack, Image, Stack, Wrap } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  FormLabel,
+  HStack,
+  Image,
+  Stack,
+  Switch,
+  Wrap,
+} from "@chakra-ui/react";
 import {
   AbstractMesh,
   Color3,
   HighlightLayer,
+  Mesh,
   Scene,
   Texture,
   Vector3,
 } from "@babylonjs/core";
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
 
 import { RenderModel } from "./render";
 
-const textures = ["/diamond.jpg", "leather.jpg", "rug.jpg"];
+type ModelFolders = "bt";
+
+const textures = [
+  "seat__1.jpg",
+  "seat__2.jpg",
+  "seat__3.jpg",
+  "seat__4.jpg",
+  "wood__1.jpg",
+  "wood__2.jpg",
+  "wood__3.jpg",
+];
+
+const modelFolder = "bt";
 
 const App = () => {
-  const [sceneFilename, setSceneFilename] = useState("bt.glb");
-  const [images, setImages] = useState<string[]>([]);
-  const [selectedMeshes, setSelectedMeshes] = useState<AbstractMesh[]>([]);
+  const [groupName, setGroupName] = useState<string>();
+  const [clickedMesh, setClickedMesh] = useState<AbstractMesh>();
   const [scene, setScene] = useState<Scene>();
   const highlightLayerEL = useRef<HighlightLayer>(null);
   const [color, setColor] = useState<string>();
+  const [isGroupSelect, setIsGroupSelect] = useState(false);
 
-  const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    // https://github.com/BabylonJS/Babylon.js/blob/master/sandbox/src/components/renderingZone.tsx#L148
-    // TODO: engine.clearInternalTexturesCache();
-    setSceneFilename(event.target.value);
-  };
+  const selectedMeshes = useMemo(() => {
+    const sceneMeshes = scene?.meshes.filter((m) => m.metadata);
+    const selected = sceneMeshes && clickedMesh
+      ? isGroupSelect
+        ? sceneMeshes.filter((m) => m.name.includes(`${groupName}`))
+        : sceneMeshes.filter((m) => m.name === clickedMesh.name)
+      : [];
+
+      scene?.meshes.forEach(m => highlightLayerEL.current?.removeMesh(m as Mesh))
+      selected.forEach(s => highlightLayerEL.current?.addMesh((s as Mesh), Color3.White()))
+
+      return selected
+  }, [isGroupSelect, scene, groupName, clickedMesh]);
 
   const handleColorChange = useCallback(
     (color: string) => {
@@ -44,10 +79,11 @@ const App = () => {
 
   const onSelectTexture = (path: string) => {
     const texture = new Texture(path, scene as Scene);
+
     selectedMeshes.forEach((mesh) => {
       (mesh.material as any).albedoTexture = texture;
-      (mesh.material as any).albedoTexture.uScale = 2;
-      (mesh.material as any).albedoTexture.vScale = 2;
+      (mesh.material as any).albedoTexture.uScale = 3;
+      (mesh.material as any).albedoTexture.vScale = 3;
     });
   };
 
@@ -55,23 +91,13 @@ const App = () => {
     setScene(scene);
   };
 
-  const onClickMesh = (mesh: AbstractMesh, scene: Scene) => {
-    const [meshTNodeName] = mesh.name.split("__");
-
-    const meshes = scene.meshes
-      .filter((m) => m.metadata)
-      .filter((m) => {
-        if (m.name.includes(`${meshTNodeName}`)) {
-          highlightLayerEL.current?.addMesh(m as Mesh, Color3.White());
-          return true;
-        } else {
-          highlightLayerEL.current?.removeMesh(m as Mesh);
-          return false;
-        }
-      });
-
-    setSelectedMeshes(meshes);
+  const onClickMesh = (mesh: AbstractMesh) => {
+    const [meshGroupName] = mesh.name.split("__");
+    setGroupName(meshGroupName);
+    setClickedMesh(mesh);
   };
+
+  // console.log('selectedMeshes', selectedMeshes)
 
   return (
     <>
@@ -85,43 +111,63 @@ const App = () => {
         </Select>
       </Box> */}
       <Box w="100vw" h="100vh">
-        {images?.length > 0 && selectedMeshes.length > 0 && (
-          <Stack
-            pos="fixed"
-            bottom={4}
-            left={4}
-            right={4}
-            justify="center"
-            spacing={8}
-          >
-            <HStack justify="center">
-              <HuePicker
-                color={color}
-                onChange={(color) => handleColorChange(color.hex)}
+        <Stack
+          pos="fixed"
+          bottom={4}
+          left={4}
+          right={4}
+          justify="center"
+          spacing={8}
+        >
+          <HStack justify="center">
+            <Button
+              colorScheme="blue"
+              onClick={() => handleColorChange("#ffffff")}
+            >
+              Reset Color
+            </Button>
+            <HStack
+              align="center"
+              bg={isGroupSelect ? "blue.500" : "blackAlpha.500"}
+              rounded="lg"
+              p={2}
+              color="white"
+            >
+              <Switch
+                id="select"
+                colorScheme="blue"
+                checked={isGroupSelect}
+                onChange={(e) => setIsGroupSelect(e.target.checked)}
               />
-              <Button
-                colorScheme="blackAlpha"
-                size="xs"
-                onClick={() => handleColorChange("#ffffff")}
-              >
-                Reset
-              </Button>
+              <FormLabel htmlFor="select">Select groups</FormLabel>
             </HStack>
-            <Wrap justify="center">
-              {images.concat(textures).map((t) => (
-                <Image
-                  alt="image"
-                  onClick={() => onSelectTexture(t)}
-                  boxSize={16}
-                  rounded="full"
-                  objectFit="cover"
-                  key={t}
-                  src={t}
+          </HStack>
+          {selectedMeshes.length > 0 && (
+            <>
+              <HStack justify="center">
+                <HuePicker
+                  color={color}
+                  onChange={(color) => handleColorChange(color.hex)}
                 />
-              ))}
-            </Wrap>
-          </Stack>
-        )}
+              </HStack>
+              <Wrap justify="center">
+                {textures.map((t) => (
+                  <Image
+                    alt="image"
+                    onClick={() =>
+                      onSelectTexture(`/models/${modelFolder}/${t}`)
+                    }
+                    boxSize={16}
+                    rounded="full"
+                    objectFit="cover"
+                    key={t}
+                    src={`/models/${modelFolder}/${t}`}
+                  />
+                ))}
+              </Wrap>
+            </>
+          )}
+        </Stack>
         <Engine
           antialias
           adaptToDeviceRatio
@@ -139,13 +185,10 @@ const App = () => {
             <hemisphericLight
               name="light"
               direction={new Vector3(0, 1, 1)}
-              intensity={0.6}
+              intensity={1}
             />
             <highlightLayer name="highlight" ref={highlightLayerEL} />
-            <RenderModel
-              sceneFilename={sceneFilename}
-              setTextures={setImages}
-            />
+            <RenderModel rootUrl={`/models/${modelFolder}/`} />
           </ReactScene>
         </Engine>
       </Box>

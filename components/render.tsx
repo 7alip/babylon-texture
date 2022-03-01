@@ -6,45 +6,28 @@ import {
   ArcRotateCamera,
   Nullable,
   FramingBehavior,
-  Texture,
 } from "@babylonjs/core";
 import { ScaledModelWithProgress } from "./scaled-model-with-progress";
 import "@babylonjs/loaders/glTF";
 import "@babylonjs/inspector";
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import { Box, Image } from "@chakra-ui/react";
+
 
 export type RenderModelProps = {
-  sceneFilename: string;
-  setTextures: (textures: string[]) => void;
+  rootUrl: string
 };
 
 export const RenderModel: FC<RenderModelProps> = ({
-  sceneFilename,
-  setTextures,
+  rootUrl,
 }) => {
   const camera = useRef<Nullable<ArcRotateCamera>>(null);
   const scene = useScene();
-
-  console.log("scene filename rendered:", sceneFilename);
 
   const onModelLoaded = (e: ILoadedModel) => {
     if (camera && camera.current) {
       // if (e.loaderName === "gltf") {
       //   camera.current.alpha += Math.PI;
       // }
-
-      const textures = scene!.textures
-        .filter((texture) => texture.metadata)
-        .map((texture) => {
-          const buffer = (texture as any)._buffer as Uint8Array;
-          const byte = new Uint8Array(buffer);
-          const blob = new Blob([byte.buffer]);
-          const url = URL.createObjectURL(blob);
-          return url;
-        });
-
-      setTextures(textures as string[]);
 
       // Enable camera's behaviors (done declaratively)
       camera.current.useFramingBehavior = true;
@@ -57,7 +40,7 @@ export const RenderModel: FC<RenderModelProps> = ({
       if (e.rootMesh) {
         camera.current.lowerRadiusLimit = null;
 
-        var worldExtends = scene!.getWorldExtends((sceneMesh) => {
+        const worldExtends = scene!.getWorldExtends((sceneMesh) => {
           const includeMesh = (e.meshes as AbstractMesh[]).some(
             (loadedMesh: AbstractMesh) => loadedMesh === sceneMesh
           );
@@ -111,8 +94,7 @@ export const RenderModel: FC<RenderModelProps> = ({
       />
 
       <ScaledModelWithProgress
-        rootUrl="/"
-        sceneFilename={sceneFilename}
+        rootUrl={rootUrl}
         progressBarColor={Color3.FromInts(135, 206, 235)}
         center={Vector3.Zero()}
         modelRotation={Vector3.Zero()}

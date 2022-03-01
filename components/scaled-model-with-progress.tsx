@@ -53,12 +53,12 @@ export const ScaledModelWithProgress = (props: any) => {
         }
       >
         <Model
-          name="x"
-          key={props.sceneFilename}
+          name="model"
+          key='model'
           reportProgress
           position={props.center}
           rootUrl={props.rootUrl}
-          sceneFilename={props.sceneFilename}
+          sceneFilename='model.glb'
           rotation={props.modelRotation}
           onModelLoaded={props.onModelLoaded}
         />
