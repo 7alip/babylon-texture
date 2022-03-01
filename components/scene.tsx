@@ -1,21 +1,14 @@
-import React, {
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  Engine,
-  Scene as ReactScene,
-} from "react-babylonjs";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Engine, Scene as ReactScene } from "react-babylonjs";
 import { HuePicker } from "react-color";
+import NextImage from "next/image";
 
 import {
   Box,
   Button,
+  Collapse,
   FormLabel,
   HStack,
-  Image,
   Stack,
   Switch,
   Wrap,
@@ -104,28 +97,32 @@ const ModelScene = () => {
   return (
     <Box w="100vw" h="100vh">
       <Stack
+        as={Collapse}
+        in={selectedMeshes.length > 0}
         pos="fixed"
         bottom={4}
         left={4}
         right={4}
         justify="center"
-        spacing={8}
+        spacing={4}
       >
         <HStack justify="center">
           <Button
-            colorScheme="blue"
-            onClick={() => handleColorChange("#ffffff")}
+            colorScheme="blackAlpha"
+            onClick={() => handleColorChange('#ffffff')}
           >
             Reset Color
           </Button>
           <HStack
+          cursor='pointer'
             align="center"
-            bg={isGroupSelect ? "blue.500" : "blackAlpha.500"}
+            bg={isGroupSelect ? "green.500" : "blackAlpha.500"}
             rounded="lg"
             p={2}
             color="white"
           >
             <Switch
+              display='none'
               id="select"
               colorScheme="blue"
               checked={isGroupSelect}
@@ -134,29 +131,34 @@ const ModelScene = () => {
             <FormLabel htmlFor="select">Select groups</FormLabel>
           </HStack>
         </HStack>
-        {selectedMeshes.length > 0 && (
-          <>
-            <HStack justify="center">
-              <HuePicker
-                color={color}
-                onChange={(color) => handleColorChange(color.hex)}
+
+        <HStack justify="center">
+          <HuePicker
+            color={color}
+            onChange={(color) => handleColorChange(color.hex)}
+          />
+        </HStack>
+        <Wrap justify="center">
+          {textures.map((t) => (
+            <Box
+              onClick={() => onSelectTexture(`/models/${modelFolder}/${t}`)}
+              rounded="full"
+              key={t}
+              overflow="hidden"
+              boxSize={16}
+            >
+              <NextImage
+                alt="image"
+                width="100%"
+                height="100%"
+                layout="intrinsic"
+                src={`/models/${modelFolder}/${t}`}
+                objectFit="cover"
+                quality={20}
               />
-            </HStack>
-            <Wrap justify="center">
-              {textures.map((t) => (
-                <Image
-                  alt="image"
-                  onClick={() => onSelectTexture(`/models/${modelFolder}/${t}`)}
-                  boxSize={16}
-                  rounded="full"
-                  objectFit="cover"
-                  key={t}
-                  src={`/models/${modelFolder}/${t}`}
-                />
-              ))}
-            </Wrap>
-          </>
-        )}
+            </Box>
+          ))}
+        </Wrap>
       </Stack>
       <Engine
         antialias
