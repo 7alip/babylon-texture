@@ -1,13 +1,13 @@
-import React, { ChangeEvent, useRef, useState } from "react";
+import React, { ChangeEvent, useCallback, useRef, useState } from "react";
 import { Engine, Scene as ReactScene } from "react-babylonjs";
+import { HuePicker } from "react-color";
 
-import { Box, Image, Stack, Wrap } from "@chakra-ui/react";
+import { Box, Button, HStack, Image, Stack, Wrap } from "@chakra-ui/react";
 import {
   AbstractMesh,
   Color3,
   HighlightLayer,
   Scene,
-  StandardMaterial,
   Texture,
   Vector3,
 } from "@babylonjs/core";
@@ -15,7 +15,7 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 
 import { RenderModel } from "./render";
 
-const textures = ["/diamond.jpg", "leather.jpg", "rug.jpg"]
+const textures = ["/diamond.jpg", "leather.jpg", "rug.jpg"];
 
 const App = () => {
   const [sceneFilename, setSceneFilename] = useState("bt.glb");
@@ -23,7 +23,7 @@ const App = () => {
   const [selectedMeshes, setSelectedMeshes] = useState<AbstractMesh[]>([]);
   const [scene, setScene] = useState<Scene>();
   const highlightLayerEL = useRef<HighlightLayer>(null);
-  console.log('images', images)
+  const [color, setColor] = useState<string>();
 
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     // https://github.com/BabylonJS/Babylon.js/blob/master/sandbox/src/components/renderingZone.tsx#L148
@@ -31,25 +31,23 @@ const App = () => {
     setSceneFilename(event.target.value);
   };
 
+  const handleColorChange = useCallback(
+    (color: string) => {
+      setColor(color);
+      selectedMeshes.forEach((mesh) => {
+        const color3 = Color3.FromHexString(color);
+        (mesh.material as any).albedoColor = color3;
+      });
+    },
+    [selectedMeshes]
+  );
+
   const onSelectTexture = (path: string) => {
     const texture = new Texture(path, scene as Scene);
-    console.log("selectedMeshes", selectedMeshes);
-
-    console.log("texture", texture.name);
     selectedMeshes.forEach((mesh) => {
-      const material = scene?.materials.find(
-        (m) => mesh.material?.id === m.id
-      ) as StandardMaterial;
-
-      // material.ambientTexture = texture;
-      material.diffuseTexture = texture;
-      // material.emissiveTexture = texture;
-      // material.specularTexture = texture;
-      // material.reflectionTexture = texture;
-      // material.refractionTexture = texture;
-      (material as any).albedoTexture = texture;
-      (material as any).albedoTexture.uScale = 2;
-      (material as any).albedoTexture.vScale = 2;
+      (mesh.material as any).albedoTexture = texture;
+      (mesh.material as any).albedoTexture.uScale = 2;
+      (mesh.material as any).albedoTexture.vScale = 2;
     });
   };
 
@@ -75,8 +73,6 @@ const App = () => {
     setSelectedMeshes(meshes);
   };
 
-  console.log('s', images.concat(textures))
-
   return (
     <>
       {/* <Box pos="absolute" top={4} right={4}>
@@ -90,21 +86,39 @@ const App = () => {
       </Box> */}
       <Box w="100vw" h="100vh">
         {images?.length > 0 && selectedMeshes.length > 0 && (
-          <Stack pos="fixed" top={4} left={4} right={4}>
+          <Stack
+            pos="fixed"
+            bottom={4}
+            left={4}
+            right={4}
+            justify="center"
+            spacing={8}
+          >
+            <HStack justify="center">
+              <HuePicker
+                color={color}
+                onChange={(color) => handleColorChange(color.hex)}
+              />
+              <Button
+                colorScheme="blackAlpha"
+                size="xs"
+                onClick={() => handleColorChange("#ffffff")}
+              >
+                Reset
+              </Button>
+            </HStack>
             <Wrap justify="center">
-              {images.concat(textures).map((t) => {
-                console.log("t", t);
-                return (
-                  <Image
-                    onClick={() => onSelectTexture(t)}
-                    boxSize={16}
-                    rounded="full"
-                    objectFit="cover"
-                    key={t}
-                    src={t}
-                  />
-                );
-              })}
+              {images.concat(textures).map((t) => (
+                <Image
+                  alt="image"
+                  onClick={() => onSelectTexture(t)}
+                  boxSize={16}
+                  rounded="full"
+                  objectFit="cover"
+                  key={t}
+                  src={t}
+                />
+              ))}
             </Wrap>
           </Stack>
         )}

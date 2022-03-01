@@ -40,12 +40,10 @@ export const RenderModel: FC<RenderModelProps> = ({
           const buffer = (texture as any)._buffer as Uint8Array;
           const byte = new Uint8Array(buffer);
           const blob = new Blob([byte.buffer]);
-          console.log("blob", blob);
           const url = URL.createObjectURL(blob);
-          console.log("url", url);
           return url;
         });
-      console.log("textures", textures);
+
       setTextures(textures as string[]);
 
       // Enable camera's behaviors (done declaratively)
